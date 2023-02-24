@@ -1,28 +1,13 @@
-const Client = require("../models/clientModel");
+const Client = require("../models/users.Model");
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
-const Token = require("../models/clientToken");
+const Token = require("../models/users.Token");
 const { sendEmail } = require("../utils/email");
 const jwt = require("jsonwebtoken");
 const sessions = require("express-session");
 const cookieParser = require("cookie-parser");
-const express = require("express");
-const app = express();
-const dotenv = require("dotenv").config();
 
-// Using sessions
-const oneDay = 1000 * 60 * 60 * 24;
-app.use(
-  sessions({
-    secret: process.env.SECRET,
-    saveUninitialized: true,
-    cookie: { maxAge: oneDay },
-    resave: false,
-  })
-);
 
-// Cookie parser stuff
-app.use(cookieParser());
 
 // @access PUBLIC
 // Public signup
@@ -59,7 +44,7 @@ const clientSign = async (req, res) => {
           token: crypto.randomBytes(32).toString("hex"),
         });
 
-        const message = `${process.env.BASE_URL}/verify/${user._id}/${token.token}`;
+        const message = `${process.env.BASE_URL}/api/v1/users/verify/${user._id}/${token.token}`;
         // Send the link
         emailSent = await sendEmail(user.email, "Verify Email", message);
         console.log("Email sent");
@@ -76,6 +61,9 @@ const clientSign = async (req, res) => {
     }
   }
 };
+
+
+
 //agent
 const agentSign = async (req, res) => {
   const { name, email, password, confirmPass, phone, country } = req.body;
@@ -97,7 +85,7 @@ const agentSign = async (req, res) => {
         const hashedPass = await bcrypt.hash(password, 10);
         let user = await Client.create({
           name,
-          role:'agent',
+          role: "agent",
           email,
           password: hashedPass,
           country,
@@ -110,7 +98,7 @@ const agentSign = async (req, res) => {
           token: crypto.randomBytes(32).toString("hex"),
         });
 
-        const message = `${process.env.BASE_URL}/verify/${user._id}/${token.token}`;
+        const message = `${process.env.BASE_URL}/api/v1/users/verify/${user._id}/${token.token}`;
         // Send the link
         emailSent = await sendEmail(user.email, "Verify Email", message);
         console.log("Email sent");
@@ -118,7 +106,7 @@ const agentSign = async (req, res) => {
           _id: user._id,
           name: user.name,
           email: user.email,
-          admin_id:req.user._id,
+          admin_id: req.user._id,
           phone: user.phone,
           country: user.country,
           message: "Email sent to your account!",
@@ -127,6 +115,9 @@ const agentSign = async (req, res) => {
     }
   }
 };
+
+
+
 // Email verification
 const emailVerify = async (req, res) => {
   let user = await Client.findOne({ _id: req.params.id });
@@ -140,20 +131,18 @@ const emailVerify = async (req, res) => {
     if (!token) {
       res.json({ message: "Invalid link!" });
     } else {
-      let updatedUser = await Client.updateOne({
-        _id: user._id,
-        verified: true,
-      });
+      let updatedUser = await Client.findByIdAndUpdate(user._id, {verified: true});
       let deleteToken = await Token.findByIdAndRemove(token._id);
       if (updatedUser && deleteToken) {
         res.json({ message: "Email verified!" });
-        // res.redirect('login')
       }
     }
   }
 };
 
-// Public login
+
+
+// Public login 
 const clientLogin = async (req, res) => {
   let email = req.body.email;
   let password = req.body.password;
@@ -167,11 +156,12 @@ const clientLogin = async (req, res) => {
     if (user && (await bcrypt.compare(password, user.password))) {
       // Check if the email is verified
       if (user.verified === true) {
-        res.json({ 
+        res.json({
           name: user.name,
           email,
-          token: generateToken(user._id)
-        })
+          token: generateToken(user._id),
+          role: user.role
+        });
       } else {
         res.json({ message: "Please verify your email!" });
       }
@@ -181,12 +171,16 @@ const clientLogin = async (req, res) => {
   }
 };
 
+
+
 // JWToken generating
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: "30d",
   });
 };
+
+
 
 // Cookie validate
 const validateCookie = async (req, res, next) => {
@@ -215,25 +209,16 @@ const validateCookie = async (req, res, next) => {
   }
 };
 
-// Client page
-const clientPage = async (req, res) => {
-  res.json({ message: "User Landing Page" });
-};
 
-// Client logout
-const clientLogout = (req, res) => {
-  // Destroy cookie
-  res.clearCookie("Client");
-  console.log("User logged out");
-  res.json({ message: "User logged out!" });
-};
+
+
+
+
 
 module.exports = {
   clientSign,
   emailVerify,
   clientLogin,
   validateCookie,
-  clientLogout,
-  clientPage,
-  agentSign
+  agentSign,
 };
