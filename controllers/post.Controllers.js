@@ -34,6 +34,7 @@ const postHouse = async (req, res) => {
     });
   }
 };
+
 //uploading post image using cloudinary
 const postVideoUpload = async (req, res) => {
   try {
@@ -148,95 +149,87 @@ const postVideoUpload = async (req, res) => {
   }
 };
 
-
 // Getting all posts
-const getPosts = async(req, res) => {
-  let posts = await Post.find({agentId: req.params.id})
-  if(posts) {
+const getPosts = async (req, res) => {
+  let posts = await Post.find({ agentId: req.params.id });
+  if (posts) {
     console.log("nice");
   } else {
-    console.log('Nope');
+    console.log("Nope");
   }
-}
-
+};
 
 // Getting the post using the id
-const getPost = async(req, res) => {
+const getPost = async (req, res) => {
   // Getting the id from the request
-  let post = await Post.findById(req.params.id)
-  if(!post){
-    res.json({message: `No Post with ${post} `})
+  let post = await Post.findById(req.params.id);
+  if (!post) {
+    res.json({ message: `No Post with ${post} ` });
   } else {
-    let agentId = post.agentId
-    let Owner = await Client.findById(agentId)
+    let agentId = post.agentId;
+    let Owner = await Client.findById(agentId);
     res.json({
-        Location: post.location,
-        Description: post.description,
-        Housetype: post.type,
-        Owner: Owner.name,
+      Location: post.location,
+      Description: post.description,
+      Housetype: post.type,
+      Owner: Owner.name,
     });
   }
-  
-}
-
+};
 
 // Get the owner of the house
-const getOwner = async(req, res) => {
+const getOwner = async (req, res) => {
   // The credentials will be given once the client sends communication fee
-  let postId = req.params.id
-  
+  let postId = req.params.id;
+
   // Get the post and the agentId for his/her credentials
-  let post = await Post.findById(postId)
-  let owner = await Client.findById(post.agentId)
-  
+  let post = await Post.findById(postId);
+  let owner = await Client.findById(post.agentId);
+
   // Display the name, email, contact and country
   res.json({
     Name: owner.name,
     Email: owner.email,
-    Contact: owner.phone
-  })
-  
-}
-
+    Contact: owner.phone,
+  });
+};
 
 // Update the post
-const updatePost = async(req, res) => {
-  let postId = req.params.id
-  let post = await Post.findById(postId)
-  res.json(post)
-}
-
+const updatePost = async (req, res) => {
+  let postId = req.params.id;
+  let post = await Post.findById(postId);
+  res.json(post);
+};
 
 // Deleting the house post
-const deletePost = async(req, res) => {
-  let postId = req.params.id
+const deletePost = async (req, res) => {
+  let postId = req.params.id;
   // Check if the post exists
-  let postExists = await Post.findById(postId)
-  if(postExists){
+  let postExists = await Post.findById(postId);
+  if (postExists) {
     // Check if it is available
-    if(postExists.taken == 'Available') {
+    if (postExists.taken == "Available") {
       // Delete the post
-      let deletedPost =  await Post.findByIdAndRemove(postId)
-      if(deletedPost) {
-        res.json({ message: `Post ${postId} is Deleted!`})
+      let deletedPost = await Post.findByIdAndRemove(postId);
+      if (deletedPost) {
+        res.json({ message: `Post ${postId} is Deleted!` });
       } else {
-        res.json({ message: 'An error occurred!'})
+        res.json({ message: "An error occurred!" });
       }
-        
     } else {
-      console.log('Nope');
+      console.log("Nope");
     }
   } else {
-    res.json({ message: `${postId} not found!`})
+    res.json({ message: `${postId} not found!` });
   }
-}
+};
 
 module.exports = {
-    postVideoUpload,
-    postHouse,
-    getPost,
-    getOwner,
-    updatePost,
-    deletePost,
-    getPosts
-}
+  postVideoUpload,
+  postHouse,
+  getPost,
+  getOwner,
+  updatePost,
+  deletePost,
+  getPosts,
+};

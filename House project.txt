@@ -1,2 +1,2 @@
 If the house is available, display it
-but if iti is taken, don't display it
+but if it is taken, don't display it
